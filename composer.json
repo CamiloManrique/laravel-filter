@@ -1,0 +1,24 @@
+{
+    "name": "camilo-manrique/laravel-filter",
+    "description": "Eloquent model filtering based on URL queries",
+    "type": "package",
+    "keywords": ["laravel", "search", "laravel-search", "filter", "laravel-filter"],
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "authors": [
+        {
+            "name": "Camilo Manrique",
+            "email": "camilomanriquec@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.0.0",
+        "illuminate/support": "5.*",
+        "illuminate/database": "5.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "CamiloManrique\\ResourceFilter\\": "src/"
+        }
+    }
+}
