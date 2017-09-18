@@ -93,9 +93,8 @@ trait Filterable{
     }
 
     private static function addRelationships($query, $relationships){
-        foreach($relationships as $relationship){
-            $query = $query->with($relationship);
-        }
+        $query = $query->with($relationships);
+
         return $query;
     }
 
