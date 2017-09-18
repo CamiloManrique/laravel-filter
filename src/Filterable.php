@@ -7,18 +7,25 @@ use Illuminate\Http\Request;
 trait Filterable{
 
     private static function getRequestFields(Request $request){
+        $keyword = config("filter.keywords.fields");
+        return !is_null($request->input($keyword)) ? explode(",", $request->input($keyword)) : null;
+    }
 
-        return !is_null($request->input("fields")) ? explode(",", $request->input('fields')) : null;
+    private static function getSorting(Request $request){
+        $keyword = config("filter.keywords.sorting");
+        return !is_null($request->input($keyword)) ? explode("/", $request->input($keyword)) : null;
     }
 
     private static function getRelationships(Request $request){
-        return !is_null($request->input("relationships")) ? explode(",", $request->input('relationships')) : array();
+        $keyword = config("filter.keywords.relationships");
+        return !is_null($request->input($keyword)) ? explode(",", $request->input($keyword)) : array();
     }
 
     private static function getFilters(Request $request){
         $params = collect($request->all());
-        return $params->filter(function ($value, $key){
-            return !in_array($key, ["fields", "page_size"]);
+        $keywords = config("filter.keywords");
+        return $params->filter(function ($value, $key) use ($keywords){
+            return !in_array($key, $keywords);
         });
     }
 
@@ -92,6 +99,16 @@ trait Filterable{
         return $query;
     }
 
+    private static function sortResult($query, $sorting){
+
+        if(is_null($sorting)){
+            return $query;
+        }
+        else{
+            return $query->orderBy($sorting[0], $sorting[1]);
+        }
+    }
+
 //    private static function addFields($query, $fields){
 //
 //        $relationships = array();
@@ -129,13 +146,14 @@ trait Filterable{
         //$fields = self::getRequestFields($request);
         $filters = self::getFilters($request);
         $relationships = self::getRelationships($request);
+        $sorting = self::getSorting($request);
 
         $query = (new static)::query();
         $query = self::addRelationships($query, $relationships);
         $query = self::addFilters($query, $filters);
+        $query = self::sortResult($query, $sorting);
 
         return $query;
-
 
 
     }
