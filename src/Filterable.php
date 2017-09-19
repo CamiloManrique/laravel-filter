@@ -23,7 +23,7 @@ trait Filterable{
 
     private static function getFilters(Request $request){
         $params = collect($request->all());
-        $keywords = config("filter.keywords");
+        $keywords = config("filter.keywords") + config("filter.aditional_keywords");
         return $params->filter(function ($value, $key) use ($keywords){
             return !in_array($key, $keywords);
         });
