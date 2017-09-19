@@ -84,7 +84,7 @@ Route::get('/users', function(){
 Route::get('/users', function(){
     return UserResource::collection(User::filterAndGet(request()));
 });
-```php
+```
 
 ## Filtering rules
 
