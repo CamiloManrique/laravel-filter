@@ -43,7 +43,7 @@ trait Filterable{
                     $args = [$parsed[0], "LIKE", "%$value%"];
                     break;
                 case "not":
-                    $args = [$parsed[0], "!=", "%$value%"];
+                    $args = [$parsed[0], "!=", "$value"];
                     break;
                 default:
                     $args = [$parsed[0], $value];
