@@ -7,7 +7,8 @@ return [
         "sorting" => "sort",
         "page_size" => "page_size",
         "relationships" => "relationships",
-        "fields" => "fields"
+        "fields" => "fields",
+        "sum" => "sum"
     ],
 
     "relationship_separator" => "@",

@@ -3,6 +3,7 @@
 namespace CamiloManrique\ResourceFilter;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 trait Filterable{
 
@@ -162,6 +163,18 @@ trait Filterable{
         $query_string = $request->getQueryString();
 
         $query = self::filter($request);
+
+        if($request->has("sum")){
+            $aggregates = [];
+            $columns = explode(",", $request->input("sum"));
+
+            foreach($columns as $column){
+                array_push($aggregates, DB::raw("SUM($column) as $column"));
+            }
+
+            return $query->get($aggregates);
+        }
+
         if($request->has("page_size")){
             $query = $query->paginate($request->page_size);
             $query->withPath(($request->url()."?$query_string"));
