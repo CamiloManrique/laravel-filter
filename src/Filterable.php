@@ -55,12 +55,23 @@ trait Filterable{
             $args = [$parsed[0], $value];
         }
         if(!is_null($relationship)){
-            return $query->whereHas($relationship, function($q) use($args){
-                $q->where(...$args);
+            return $query->whereHas($relationship, function($q) use($args, $value){
+                if(is_array($value)){
+                    $q->whereIn(...$args);
+                }
+                else{
+                    $q->where(...$args);
+                }
             });
         }
         else{
-            return $query->where(...$args);
+            if(is_array($value)){
+                return $query->whereIn(...$args);
+
+            }
+            else{
+                return $query->where(...$args);
+            }
 
         }
     }
@@ -160,7 +171,7 @@ trait Filterable{
 
     public static function filterAndGet(Request $request){
 
-        $query_string = $request->getQueryString();
+        $query_string = http_build_query($request->except("page"));
 
         $query = self::filter($request);
 
