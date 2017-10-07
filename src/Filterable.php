@@ -183,7 +183,13 @@ trait Filterable{
                 array_push($aggregates, DB::raw("SUM($column) as $column"));
             }
 
-            return $query->get($aggregates);
+            $result = $query->get($aggregates)[0];
+
+            foreach ($columns as $column){
+                $result->$column = intval($result->$column);
+            }
+
+            return $result;
         }
 
         if($request->has("page_size")){
