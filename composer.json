@@ -13,12 +13,25 @@
     ],
     "require": {
         "php": ">=7.0.0",
+        "illuminate/config": "5.*",
         "illuminate/support": "5.*",
         "illuminate/database": "5.*"
     },
+    "require-dev": {
+        "fzaninotto/faker": "~1.4",
+        "mockery/mockery": "0.9.*",
+        "phpunit/phpunit": "~6.0",
+        "orchestra/testbench": "~3.0",
+        "orchestra/database": "~3.5.0"
+    },
     "autoload": {
         "psr-4": {
-            "CamiloManrique\\ResourceFilter\\": "src/"
+            "CamiloManrique\\Filter\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "CamiloManrique\\Filter\\Tests\\": "tests"
         }
     }
 }

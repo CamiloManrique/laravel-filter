@@ -1,8 +1,9 @@
 <?php
 
-namespace CamiloManrique\ResourceFilter;
+namespace CamiloManrique\Filter;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 trait Filterable{
@@ -12,25 +13,51 @@ trait Filterable{
         return !is_null($request->input($keyword)) ? explode(",", $request->input($keyword)) : null;
     }
 
-    private static function getSorting(Request $request){
+    /**
+     *
+     * Get a two value array containing the sorting column and the direction
+     *
+     * @param Collection $params
+     * @return array
+     *
+     */
+
+    private static function _getSorting(Collection $params){
         $keyword = config("filter.keywords.sorting");
-        return !is_null($request->input($keyword)) ? explode("/", $request->input($keyword)) : null;
+        return $params->has($keyword) ? explode("/", $params->get($keyword)) : null;
     }
 
-    private static function getRelationships(Request $request){
+    /**
+     *
+     * Get an array containing only the relationships
+     *
+     * @param Collection $params
+     * @return array
+     *
+     */
+
+    private static function _getRelationships(Collection $params){
         $keyword = config("filter.keywords.relationships");
-        return !is_null($request->input($keyword)) ? explode(",", $request->input($keyword)) : array();
+        return $params->has($keyword) ? explode(",", $params->get($keyword)) : [];
     }
 
-    private static function getFilters(Request $request){
-        $params = collect($request->all());
+    /**
+     *
+     * Get an array containing only the column filters
+     *
+     * @param Collection $params
+     * @return array
+     *
+     */
+
+    private static function _getFilters(Collection $params){
         $keywords = config("filter.keywords") + config("filter.aditional_keywords");
         return $params->filter(function ($value, $key) use ($keywords){
             return !in_array($key, $keywords);
-        });
+        })->all();
     }
 
-    private static function processFilter($query, $column_unparsed, $value, $relationship=null){
+    private static function _processFilter($query, $column_unparsed, $value, $relationship=null){
         $parsed = preg_split("/".config("filter.column_query_modificator")."/", $column_unparsed);
         if(count($parsed) == 2){
             switch($parsed[1]){
@@ -76,9 +103,9 @@ trait Filterable{
         }
     }
 
-    private static function addFilters($query, $filters){
+    private static function _addFilters($query, $filters){
         $relationships = [];
-        foreach($filters->all() as $key => $value){
+        foreach($filters as $key => $value){
 
             $filter_attr = preg_split("/".config("filter.relationship_separator")."/", $key);
 
@@ -88,11 +115,11 @@ trait Filterable{
                 if(!in_array($relationship, $relationships)){
                     array_push($relationships, $relationship);
                 }
-                $query = self::processFilter($query, $column_unparsed, $value, $relationship);
+                $query = self::_processFilter($query, $column_unparsed, $value, $relationship);
             }
             else{
                 $column_unparsed = $filter_attr[0];
-                $query = self::processFilter($query, $column_unparsed, $value);
+                $query = self::_processFilter($query, $column_unparsed, $value);
             }
 
         }
@@ -104,13 +131,12 @@ trait Filterable{
 
     }
 
-    private static function addRelationships($query, $relationships){
+    private static function _addRelationships($query, $relationships){
         $query = $query->with($relationships);
-
         return $query;
     }
 
-    private static function sortResult($query, $sorting){
+    private static function _sortResult($query, $sorting){
 
         if(is_null($sorting)){
             return $query;
@@ -152,32 +178,90 @@ trait Filterable{
 //        return $query;
 //    }
 
-    public static function filter(Request $request){
+    /**
+     *
+     * Turn the input into a collection. Also throws and InvalidArgumentException if the argument is not a
+     * Request or an array.
+     *
+     * @param Request|array|Collection $input
+     * @return Collection
+     *
+     *
+     * @throws \InvalidArgumentException
+     */
+
+    private static function _normalizeArguments($input){
+        if (is_object($input)){
+            if(get_class($input) == Request::class)
+                return collect($input->all());
+            elseif (get_class($input) == Collection::class){
+                return $input;
+            }
+            else{
+                throw new \InvalidArgumentException("Argument must be a Request, Collection or array");
+            }
+        }
+        elseif (is_array($input)){
+            return collect($input);
+        }
+        else{
+            throw new \InvalidArgumentException("Argument must be a Request, Collection or array");
+        }
+    }
+
+    /**
+     *
+     * Get the query for selecting that match the request filters
+     *
+     * @param Request|array|Collection $input
+     * @return
+     *
+     *
+     * @throws \InvalidArgumentException
+     */
+
+    public static function filter($input){
+
+        $input = self::_normalizeArguments($input);
 
         //$fields = self::getRequestFields($request);
-        $filters = self::getFilters($request);
-        $relationships = self::getRelationships($request);
-        $sorting = self::getSorting($request);
+        $filters = self::_getFilters($input);
+        $relationships = self::_getRelationships($input);
+        $sorting = self::_getSorting($input);
+
 
         $query = (new static)::query();
-        $query = self::addRelationships($query, $relationships);
-        $query = self::addFilters($query, $filters);
-        $query = self::sortResult($query, $sorting);
+        $query = self::_addRelationships($query, $relationships);
+        $query = self::_addFilters($query, $filters);
+        $query = self::_sortResult($query, $sorting);
 
         return $query;
 
 
     }
 
-    public static function filterAndGet(Request $request){
+    /**
+     *
+     * Get the collection containing the models matching the request filters
+     *
+     * @param Request|array|Collection $input
+     * @return Collection
+     *
+     *
+     * @throws \InvalidArgumentException
+     */
 
-        $query_string = http_build_query($request->except("page"));
+    public static function filterAndGet($input){
 
-        $query = self::filter($request);
+        $input = self::_normalizeArguments($input);
 
-        if($request->has("sum")){
+        $query_string = http_build_query(\request()->except("page"));
+
+        $query = self::filter($input);
+
+        if($input->has("sum")){
             $aggregates = [];
-            $columns = explode(",", $request->input("sum"));
+            $columns = explode(",", $input->get("sum"));
 
             foreach($columns as $column){
                 array_push($aggregates, DB::raw("SUM($column) as $column"));
@@ -192,14 +276,14 @@ trait Filterable{
             return $result;
         }
 
-        if($request->has("page_size")){
-            $query = $query->paginate($request->page_size);
-            $query->withPath(($request->url()."?$query_string"));
+        if($input->has("page_size")){
+            $query = $query->paginate($input->page_size);
+            $query->withPath(($input->url()."?$query_string"));
         }
         else{
             if(config("filter.paginate_by_default")){
                 $query = $query->paginate(config("filter.page_size"));
-                $query->withPath(($request->url()."?$query_string"));
+                $query->withPath((\request()->url()."?$query_string"));
             }
             else{
                 $query = $query->get();
