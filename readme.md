@@ -6,9 +6,9 @@ This package allows querying your Eloquent models, based on URL queries. Using s
 
 Require package with composer:
 
-```
-composer require camilo-manrique/laravel-filter
-```
+    ```
+    composer require camilo-manrique/laravel-filter
+    ```
 
 Add CamiloManrique\ResourceFilter to your service providers on your config/app.php:
 

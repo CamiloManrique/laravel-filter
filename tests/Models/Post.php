@@ -12,4 +12,8 @@ class Post extends Model
     public function user(){
         return $this->belongsTo('CamiloManrique\Filter\Tests\Models\User');
     }
+
+    public function comments(){
+        return $this->hasMany('CamiloManrique\Filter\Tests\Models\Comment');
+    }
 }

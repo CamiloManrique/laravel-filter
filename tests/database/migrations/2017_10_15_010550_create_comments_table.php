@@ -20,6 +20,7 @@ class CreateCommentsTable extends Migration
             $table->unsignedInteger('post_id');
             $table->text('comment');
             $table->integer('votes');
+            $table->integer('shares');
         });
     }
 

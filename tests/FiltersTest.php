@@ -2,6 +2,7 @@
 
 namespace CamiloManrique\Filter\Tests;
 
+use CamiloManrique\Filter\Tests\Models\Comment;
 use CamiloManrique\Filter\Tests\Models\Country;
 use CamiloManrique\Filter\Tests\Models\PersonalInfo;
 use CamiloManrique\Filter\Tests\Models\Post;
@@ -49,9 +50,14 @@ class FiltersTest extends TestCase
 
         $users->push($user3);
 
-//        $users->each(function ($u){
-//            $u->posts()->create(factory(Post::class, 3)->make());
-//        });
+        $users->each(function ($u){
+            $u->posts()->saveMany(factory(Post::class)->times(3)->make());
+            $u->comments()->saveMany(factory(Comment::class)->times(3)->make([
+                "post_id" => 1,
+                "votes" => 1,
+                "shares" => 2
+            ]));
+        });
 
     }
 
@@ -115,6 +121,31 @@ class FiltersTest extends TestCase
 
         $this->assertCount(2, $users);
 
+        $array_users = collect($users->toArray()['data']);
+
+        $this->assertTrue(
+            $array_users->every(function ($user){
+                return count($user['posts']) == 3 && count($user['comments']) == 3;
+            })
+        );
+    }
+
+    /**
+     * Test the sum columns feature
+     *
+     * @return void
+     */
+    public function testSum(){
+        $result = Comment::filterAndGet([
+            "sum" => "votes,shares",
+            "user_id" => 1
+        ]);
+
+        $this->assertNotNull($result->votes);
+        $this->assertNotNull($result->shares);
+
+        $this->assertEquals(3, $result->votes);
+        $this->assertEquals(6, $result->shares);
     }
 
 

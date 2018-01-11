@@ -17,6 +17,6 @@ use CamiloManrique\Filter\Tests\Models\Comment;
 $factory->define(Comment::class, function (Faker $faker) {
     return [
         'comment' => $faker->text(),
-        'votes' => $faker->numberBetween(-10, 10),
+        'votes' => $faker->numberBetween(-10, 10)
     ];
 });
