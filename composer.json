@@ -4,7 +4,7 @@
     "type": "package",
     "keywords": ["laravel", "search", "laravel-search", "filter", "laravel-filter"],
     "license": "MIT",
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "authors": [
         {
             "name": "Camilo Manrique",
