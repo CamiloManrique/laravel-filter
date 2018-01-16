@@ -26,12 +26,12 @@
     },
     "autoload": {
         "psr-4": {
-            "CamiloManrique\\Filter\\": "src/"
+            "CamiloManrique\\LaravelFilter\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "CamiloManrique\\Filter\\Tests\\": "tests"
+            "CamiloManrique\\LaravelFilter\\Tests\\": "tests"
         }
     }
 }
