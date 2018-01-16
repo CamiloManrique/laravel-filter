@@ -1,6 +1,6 @@
 <?php
 
-namespace CamiloManrique\ResourceFilter;
+namespace CamiloManrique\LaravelFilter;
 
 use Illuminate\Support\ServiceProvider;
 

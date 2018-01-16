@@ -17,6 +17,9 @@ class FiltersTest extends TestCase
         factory(Country::class)->create([
             "country" => "United States"
         ]);
+        factory(Country::class)->create([
+            "country" => "Canada"
+        ]);
 
         $users = collect();
 
@@ -48,6 +51,15 @@ class FiltersTest extends TestCase
             "country_id" => 1
         ]));
 
+        $user4 = factory(User::class)->create([
+            "email" => "user4@example.com"
+        ]);
+
+        $user4->personal_info()->save(factory(PersonalInfo::class)->make([
+            "name" => "Sarah Wilson",
+            "country_id" => 2
+        ]));
+
         $users->push($user3);
 
         $users->each(function ($u){
@@ -68,7 +80,7 @@ class FiltersTest extends TestCase
      */
     public function testFactories()
     {
-        $this->assertCount(3, User::all());
+        $this->assertCount(4, User::all());
 
     }
 
@@ -90,7 +102,7 @@ class FiltersTest extends TestCase
      */
     public function testNoFiltersQuery(){
         $users = User::filterAndGet([]);
-        $this->assertCount(3, $users);
+        $this->assertCount(4, $users);
     }
 
     /**
@@ -131,6 +143,18 @@ class FiltersTest extends TestCase
     }
 
     /**
+     * Test filter array parameters
+     * @return void
+     */
+    public function testArrayParameter(){
+        $users = User::filterAndGet([
+            "personal_info@country_id" => [1, 2]
+        ]);
+
+        $this->assertCount(4, $users);
+    }
+
+    /**
      * Test the sum columns feature
      *
      * @return void
@@ -147,8 +171,5 @@ class FiltersTest extends TestCase
         $this->assertEquals(3, $result->votes);
         $this->assertEquals(6, $result->shares);
     }
-
-
-
 
 }

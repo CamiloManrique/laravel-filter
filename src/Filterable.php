@@ -1,6 +1,6 @@
 <?php
 
-namespace CamiloManrique\Filter;
+namespace CamiloManrique\LaravelFilter;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
