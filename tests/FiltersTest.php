@@ -1,12 +1,12 @@
 <?php
 
-namespace CamiloManrique\Filter\Tests;
+namespace CamiloManrique\LaravelFilter\Tests;
 
-use CamiloManrique\Filter\Tests\Models\Comment;
-use CamiloManrique\Filter\Tests\Models\Country;
-use CamiloManrique\Filter\Tests\Models\PersonalInfo;
-use CamiloManrique\Filter\Tests\Models\Post;
-use CamiloManrique\Filter\Tests\Models\User;
+use CamiloManrique\LaravelFilter\Tests\Models\Comment;
+use CamiloManrique\LaravelFilter\Tests\Models\Country;
+use CamiloManrique\LaravelFilter\Tests\Models\PersonalInfo;
+use CamiloManrique\LaravelFilter\Tests\Models\Post;
+use CamiloManrique\LaravelFilter\Tests\Models\User;
 
 class FiltersTest extends TestCase
 {
@@ -170,6 +170,20 @@ class FiltersTest extends TestCase
 
         $this->assertEquals(3, $result->votes);
         $this->assertEquals(6, $result->shares);
+    }
+
+    /**
+     * Test pagination
+     *
+     * @return void
+     */
+    public function testPagination(){
+        $comments = Comment::filterAndGet([
+            "user_id" => 1,
+            "page_size" => 2
+        ]);
+
+        $this->assertCount(2, $comments);
     }
 
 }

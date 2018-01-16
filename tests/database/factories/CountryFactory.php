@@ -1,7 +1,7 @@
 <?php
 
 use Faker\Generator as Faker;
-use CamiloManrique\Filter\Tests\Models\Country;
+use CamiloManrique\LaravelFilter\Tests\Models\Country;
 
 /*
 |--------------------------------------------------------------------------

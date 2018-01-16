@@ -2,7 +2,7 @@
 
 use Faker\Generator as Faker;
 
-use CamiloManrique\Filter\Tests\Models\User;
+use CamiloManrique\LaravelFilter\Tests\Models\User;
 
 /*
 |--------------------------------------------------------------------------

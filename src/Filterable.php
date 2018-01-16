@@ -277,8 +277,8 @@ trait Filterable{
         }
 
         if($input->has("page_size")){
-            $query = $query->paginate($input->page_size);
-            $query->withPath(($input->url()."?$query_string"));
+            $query = $query->paginate($input->get("page_size"));
+            $query->withPath((\request()->url()."?$query_string"));
         }
         else{
             if(config("filter.paginate_by_default")){

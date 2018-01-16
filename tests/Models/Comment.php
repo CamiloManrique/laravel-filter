@@ -1,8 +1,8 @@
 <?php
 
-namespace CamiloManrique\Filter\Tests\Models;
+namespace CamiloManrique\LaravelFilter\Tests\Models;
 
-use CamiloManrique\Filter\Filterable;
+use CamiloManrique\LaravelFilter\Filterable;
 use Illuminate\Database\Eloquent\Model;
 
 class Comment extends Model
@@ -10,10 +10,10 @@ class Comment extends Model
     use Filterable;
 
     public function user(){
-        return $this->belongsTo('CamiloManrique\Filter\Tests\Models\User');
+        return $this->belongsTo('CamiloManrique\LaravelFilter\Tests\Models\User');
     }
 
     public function post(){
-        return $this->belongsTo('CamiloManrique\Filter\Tests\Models\Post');
+        return $this->belongsTo('CamiloManrique\LaravelFilter\Tests\Models\Post');
     }
 }

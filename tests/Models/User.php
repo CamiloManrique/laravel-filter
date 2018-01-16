@@ -1,8 +1,8 @@
 <?php
 
-namespace CamiloManrique\Filter\Tests\Models;
+namespace CamiloManrique\LaravelFilter\Tests\Models;
 
-use CamiloManrique\Filter\Filterable;
+use CamiloManrique\LaravelFilter\Filterable;
 use Illuminate\Database\Eloquent\Model;
 
 class User extends Model
@@ -28,7 +28,7 @@ class User extends Model
     ];
 
     public function personal_info(){
-        return $this->hasOne('CamiloManrique\Filter\Tests\Models\PersonalInfo');
+        return $this->hasOne('CamiloManrique\LaravelFilter\Tests\Models\PersonalInfo');
     }
 
     public function posts(){

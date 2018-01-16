@@ -1,7 +1,7 @@
 <?php
 
 use Faker\Generator as Faker;
-use CamiloManrique\Filter\Tests\Models\Comment;
+use CamiloManrique\LaravelFilter\Tests\Models\Comment;
 
 /*
 |--------------------------------------------------------------------------

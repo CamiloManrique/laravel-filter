@@ -1,6 +1,6 @@
 <?php
 
-namespace CamiloManrique\Filter\Tests;
+namespace CamiloManrique\LaravelFilter\Tests;
 
 use Orchestra\Testbench\TestCase as BaseTestCase;
 
