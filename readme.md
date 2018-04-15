@@ -1,5 +1,9 @@
 # Laravel Eloquent Model Filter
 
+[![Latest Stable Version](https://poser.pugx.org/camilo-manrique/laravel-filter/v/stable)](https://packagist.org/packages/camilo-manrique/laravel-filter)
+[![License](https://poser.pugx.org/camilo-manrique/laravel-filter/license)](https://packagist.org/packages/camilo-manrique/laravel-filter)
+[![Build Status](https://travis-ci.org/CamiloManrique/laravel-filter.svg?branch=master)](https://travis-ci.org/CamiloManrique/laravel-filter)
+
 This package allows querying your Eloquent models, based on URL queries. Using some simple rules, you can even filter based on related models and use diferent SQL comparison operators.
 
 ## Instalation
@@ -10,7 +14,7 @@ Require package with composer:
     composer require camilo-manrique/laravel-filter
     ```
 
-Add CamiloManrique\ResourceFilter to your service providers on your config/app.php:
+Add CamiloManrique\LaravelFilter to your service providers on your config/app.php:
 
 ```php
 
@@ -31,35 +35,17 @@ Depending on your database column names and personal preferences, you might need
 
 ## Usage
 
-To filter your models, just add the Filterable trait to the models you wish to filter (don't forget the CamiloManrique\ResourceFilter\Filterable namespace):
+This package add two macro methods to the Builder class which allow to use the filtering methods without any further setup. Both methods can receive an Http Request, a Collection or an array as argument. The two methods are explained below.
 
-```php
-<?php
+> **Note on method names:** The macros method names can be customized on the configuration file, in case there are naming conflicts on the Builder class macros. The default names will be used on the examples.
 
-namespace App;
-
-use CamiloManrique\ResourceFilter\Filterable;
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-
-class User extends Model
-{
-    use Filterable;
-
-    /* The rest of your model goes here */
-    
-
-}
-```
-
-After that you can filter your models in two ways. Both of them receive the Http Request as argument:
 Get a query builder instance:
 
 ```php
 User::filter($request)
 ```
  
- With this method you get a query builder, in which you can keep applying query builder methods, including `get()`, `first()`, `paginate()` and many others.
+ With this method you get a query builder instance, in which you can keep applying query builder methods, including `get()`, `first()`, `paginate()` and many others.
   
 Get a model instance:
 
@@ -67,16 +53,31 @@ Get a model instance:
 User::filterandGet($request)
 ```
 
-This method handles the query building and fetching for you. It even handles pagination for you out of the box. For default, automatic pagination using this method is turned
-on, but you can change this behavior publishing the configuration file and editing it.
+This method handles the query building and fetching for you. It even handles pagination for you out of the box. For default, automatic pagination using this method is turned on, but you can change this behavior publishing the configuration file and editing it.
 
-##### Practical usage example
+> Those methods can also be called without arguments, in which case no filters are applied to the query
+
+Since those methods are macros of the Builder class, it can also chained when using related models on a model instance. For example, assuming that the model User has a relationship with Post model, you can use it like this:
+
+```php
+$user = User::find(1)
+$user->posts()->filterAndGet($request);
+```
+
+### Practical usage example
 
 Returning from a route:
 ```php
 Route::get('/users', function(){
     return User::filterAndGet(request());
 });
+```
+
+Returning from a controller:
+```php
+public function index(Request $request){
+    return User::filterAndGet($request);
+}
 ```
 
 > **A note on Eloquent API Resources:** If you are using Laravel 5.5, you can also use this package with Eloquent Resources new feature:
@@ -88,31 +89,52 @@ Route::get('/users', function(){
 
 ## Filtering rules
 
-Now, this is an important section. I have explained how to install a call the filter methods, but how can you actually define your filters? Well, it's rather simple for basic queries
-and a little more verbose if you need to query based on related models.
+Now, this is an important section. We have explained how to install and call the filter methods, but how can you actually define your filters? Well, it's rather simple for basic queries and a little more verbose if you need to query based on related models.
 
 ### Defining the filtering columns
 
 In your request, you simply use the column names as keys and the comparison values as, well the values.
 
-##### Example
+#### Example
 
-Let's say you want to retrieve the users from Germany. Your URI request would be like this:
+Let's assume that your app URL is http://www.example.com and you defined a route /users that points to a controller method filter like this:
+
+```php
+    namespace App\Http\Controllers;
+    
+    use App\Users;
+    
+    class UsersController extends Controller
+    {
+        public function filter(Request $request)
+        {
+            return User::filterAndGet($request);
+        }
+    }
+```
+
+Let's say you want to retrieve the users from Germany. Your Http Request object should have a key named country with its value set to Germany. The URI request would be like this:
 
 ```php
     http://www.example.com/users?country=Germany
 ```
 
-Now you want to be more specific and you want to retrieve the users who, not only are from Germany, but also are males. Your URI would turn into something like this:
+Now let's say you want to be more specific and you want to retrieve the users who, not only are from Germany, but also are males. Your URI would turn into something like this:
 
 ```php
     http://www.example.com/users?country=Germany&gender=Male
 ```
 
+Remember that you can also use Collections and array to pass the desired filters. The equivalent of the last example using an array as parameter would be like this:
+
+```php
+    $filters = ["country" => "Germany", "gender" => "Male"]
+    User::filterAndGet($filters);
+```
+
 #### Query comparison operators
 
-The above examples work only with exact matches, but you would probably need a more loose comparison like the one that >, <, LIKE and != operators offer. In order to use
-this operators, you append a keyword at the end of the column name, separated by a '/' character. This separation character can be changed on the configuration file.
+The above examples work only with exact matches, but you would probably need a more loose comparison like the one that >, <, LIKE and != operators offer. In order to use this operators, you append a keyword at the end of the column name, separated by a '/' character. This separation character can be changed on the configuration file.
 
 This is the list of the keywords and their corresponding operators:
 
@@ -121,7 +143,7 @@ This is the list of the keywords and their corresponding operators:
 - **like:** LIKE %value%
 - **not:** != value
 
-##### Example
+#### Example
 
 Retrieve the users from Germany and under 30 years:
 
@@ -130,4 +152,57 @@ Retrieve the users from Germany and under 30 years:
 ```
 
 In the previous example, %2F is the encoding for the '/' character.
+
+Equivalent form using an array as parameter:
+
+```php
+    $filters = ["country" => "Germany", "age/end" => 30]
+    User::filterAndGet($filters);
+```
+
+### Advanced Usage
+
+#### Appending related models to the response
+
+Sometimes you might need to fetch additional related models from your query. You can achieve this adding the keyword "relationships" to your input and setting its value to a comma-separated list of relationships (as defined in your model class, not the table name) you want to include.
+
+> If you have a column named "relationships" in your model, the filter will behave unexpectedly. In that case, change search in the config file for the relationship key on the keyword array and change its value to any other word you want that won't cause conflicts with your column names.
+
+For example, let's say you have an User model with two related models, Posts and Comments, related model in a one to many relationship (a User can have many Posts and Comments). Now, you want to get only the users from Germany, but you want to include the posts and comments from the users in the response. The input would look like this:
+
+```php
+    $filters = ["country" => "Germany", "relationships" => "posts,comments"]
+    User::filterAndGet($filters);
+```
+
+This way, the Posts and Comments models from each user will be included in the response.
+
+> Be careful when loading relationships with many models, because all of them will be loaded, and can lead to very slow response times.
+
+
+#### Filtering based on related models
+
+Just as you can include related models on your result, you can also filter your results based on related models. You need only to prepend the relationship and a "@" character to the column name. For example, let's say a User model has a one on one relationship named "account_info", with a model named AccountInfo, and this model has an attribute called "name". To filter based the user model on the column "name" from the AccountInfo model, the input would be:
+
+```php
+    $filters = ["account_info@name" => "John"]
+    User::filterAndGet($filters);
+```
+
+#### Get sum aggregate
+
+Sometimes, you don't need the actual models from a query. Instead you might need the total sum of one or more attributes. In that case, you should add the keyword "sum" to your input, and setting its value to the column or columns you want to get the total sum (the columns should be comma-separated). An example would be getting the total votes from some user posts:
+
+```php
+    $filters = ["user_id" => 1, sum" => "votes"]
+    User::filterAndGet($filters);
+```
+
+Another option is using the Eloquent relationships method:
+
+```php
+    $user = User::find(1)
+    $filters = ["sum" => "votes"]
+    $user->posts()->filterAndGet($filters);
+```
 

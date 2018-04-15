@@ -182,8 +182,6 @@ class FiltersTest extends TestCase
 
         $response = $user->posts()->filter(["title" => "TestTitle"])->get();
         $this->assertCount(1, $response);
-
-
     }
 
 
@@ -199,6 +197,21 @@ class FiltersTest extends TestCase
         ]);
 
         $this->assertCount(2, $comments);
+    }
+
+    /**
+     * Test that the filter methods can be chained with the Eloquent relationship methods.
+     */
+    public function testFilterFromEloquentRelationship(){
+
+        $user = User::all()->first();
+        $user->posts()->save(new Post(["title" => "TestTitle", "content" => "TestContent"]));
+
+        $user = User::find(1);
+        $response = $user->posts()->filterAndGet(["title" => "TestTitle"]);
+
+        $this->assertCount(1, $response);
+
     }
 
 }
