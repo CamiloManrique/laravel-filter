@@ -2,16 +2,17 @@
 
 namespace CamiloManrique\LaravelFilter;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 trait Filterable{
 
-    private static function getRequestFields(Request $request){
-        $keyword = config("filter.keywords.fields");
-        return !is_null($request->input($keyword)) ? explode(",", $request->input($keyword)) : null;
-    }
+//    private static function getRequestFields(Request $request){
+//        $keyword = config("filter.keywords.fields");
+//        return !is_null($request->input($keyword)) ? explode(",", $request->input($keyword)) : null;
+//    }
 
     /**
      *
@@ -21,7 +22,6 @@ trait Filterable{
      * @return array
      *
      */
-
     private static function _getSorting(Collection $params){
         $keyword = config("filter.keywords.sorting");
         return $params->has($keyword) ? explode("/", $params->get($keyword)) : null;
@@ -35,7 +35,6 @@ trait Filterable{
      * @return array
      *
      */
-
     private static function _getRelationships(Collection $params){
         $keyword = config("filter.keywords.relationships");
         return $params->has($keyword) ? explode(",", $params->get($keyword)) : [];
@@ -49,7 +48,6 @@ trait Filterable{
      * @return array
      *
      */
-
     private static function _getFilters(Collection $params){
         $keywords = config("filter.keywords") + config("filter.aditional_keywords");
         return $params->filter(function ($value, $key) use ($keywords){
@@ -57,6 +55,14 @@ trait Filterable{
         })->all();
     }
 
+    /**
+     *
+     * Process a filter and append it to the query
+     *
+     * @param Collection $params
+     * @return array
+     *
+     */
     private static function _processFilter($query, $column_unparsed, $value, $relationship=null){
         $parsed = preg_split("/".config("filter.column_query_modificator")."/", $column_unparsed);
         if(count($parsed) == 2){
@@ -183,7 +189,7 @@ trait Filterable{
      * Turn the input into a collection. Also throws and InvalidArgumentException if the argument is not a
      * Request or an array.
      *
-     * @param Request|array|Collection $input
+     * @param Request|array|Collection|null $input
      * @return Collection
      *
      *
@@ -191,6 +197,9 @@ trait Filterable{
      */
 
     private static function _normalizeArguments($input){
+        if(is_null($input)){
+            return collect();
+        }
         if (is_object($input)){
             if(get_class($input) == Request::class)
                 return collect($input->all());
@@ -213,14 +222,15 @@ trait Filterable{
      *
      * Get the query for selecting that match the request filters
      *
-     * @param Request|array|Collection $input
+     * @param Request|array|Collection|null $input
+     * @param Builder|null $builder
      * @return
      *
      *
      * @throws \InvalidArgumentException
      */
 
-    public static function filter($input){
+    public static function filter($input = null, $builder){
 
         $input = self::_normalizeArguments($input);
 
@@ -230,7 +240,7 @@ trait Filterable{
         $sorting = self::_getSorting($input);
 
 
-        $query = (new static)::query();
+        $query = $builder;
         $query = self::_addRelationships($query, $relationships);
         $query = self::_addFilters($query, $filters);
         $query = self::_sortResult($query, $sorting);
@@ -244,20 +254,21 @@ trait Filterable{
      *
      * Get the collection containing the models matching the request filters
      *
-     * @param Request|array|Collection $input
+     * @param Request|array|Collection|null $input
+     * @param Builder|null $builder
      * @return Collection
      *
      *
      * @throws \InvalidArgumentException
      */
 
-    public static function filterAndGet($input){
+    public static function filterAndGet($input = null, $builder){
 
         $input = self::_normalizeArguments($input);
 
         $query_string = http_build_query(\request()->except("page"));
 
-        $query = self::filter($input);
+        $query = self::filter($input, $builder);
 
         if($input->has("sum")){
             $aggregates = [];

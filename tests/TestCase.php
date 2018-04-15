@@ -34,7 +34,8 @@ abstract class TestCase extends BaseTestCase
     protected function getPackageProviders($app)
     {
         return [
-            \Orchestra\Database\ConsoleServiceProvider::class
+            \Orchestra\Database\ConsoleServiceProvider::class,
+            \CamiloManrique\LaravelFilter\FilterServiceProvider::class
         ];
     }
 }

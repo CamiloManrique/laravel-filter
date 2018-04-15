@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class Comment extends Model
 {
-    use Filterable;
 
     public function user(){
         return $this->belongsTo('CamiloManrique\LaravelFilter\Tests\Models\User');

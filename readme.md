@@ -15,7 +15,7 @@ Add CamiloManrique\ResourceFilter to your service providers on your config/app.p
 ```php
 
 'providers' => [
-    CamiloManrique\ResourceFilter\FilterServiceProvider::class
+    CamiloManrique\LaravelFilter\FilterServiceProvider::class
 ]
 
 ```

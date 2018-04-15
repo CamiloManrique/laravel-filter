@@ -2,6 +2,12 @@
 
 return [
 
+    /* Macro Names*/
+    "macros" => [
+        "filter" => "filter",
+        "filterAndGet" => "filterAndGet"
+    ],
+
     /* Keywords */
     "keywords" => [
         "sorting" => "sort",

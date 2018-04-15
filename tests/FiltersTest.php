@@ -85,7 +85,7 @@ class FiltersTest extends TestCase
     }
 
     /**
-     * Assert that InvalidArgument exception is raised if argument is different from Request or array.
+     * Assert that InvalidArgument exception is raised if argument is different from Request, array or collection.
      *
      * @return void
      */
@@ -101,7 +101,7 @@ class FiltersTest extends TestCase
      * @return void
      */
     public function testNoFiltersQuery(){
-        $users = User::filterAndGet([]);
+        $users = User::filterAndGet();
         $this->assertCount(4, $users);
     }
 
@@ -171,6 +171,21 @@ class FiltersTest extends TestCase
         $this->assertEquals(3, $result->votes);
         $this->assertEquals(6, $result->shares);
     }
+
+    /**
+     * Test the filter on relationship
+     * @return void
+     */
+    public function testRelationshipQuery(){
+        $user = User::all()->first();
+        $user->posts()->save(new Post(["title" => "TestTitle", "content" => "TestContent"]));
+
+        $response = $user->posts()->filter(["title" => "TestTitle"])->get();
+        $this->assertCount(1, $response);
+
+
+    }
+
 
     /**
      * Test pagination

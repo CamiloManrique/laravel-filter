@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class User extends Model
 {
-    use Filterable;
 
     /**
      * The attributes that are mass assignable.
