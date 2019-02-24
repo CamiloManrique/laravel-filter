@@ -14,7 +14,8 @@ return [
         "page_size" => "page_size",
         "relationships" => "relationships",
         "fields" => "fields",
-        "sum" => "sum"
+        "sum" => "sum",
+        "model_count" => "model_count"
     ],
 
     "relationship_separator" => "@",

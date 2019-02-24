@@ -71,6 +71,16 @@ class FiltersTest extends TestCase
             ]));
         });
 
+        $user5 = factory(User::class)->create([
+            "email" => "user5@example.com"
+        ]);
+
+        $user5->personal_info()->save(factory(PersonalInfo::class)->make([
+            "name" => "Caroline Cooper",
+            "country_id" => 2
+        ]));
+        $user5->posts()->saveMany(factory(Post::class)->times(2)->make());
+
     }
 
     /**
@@ -80,7 +90,7 @@ class FiltersTest extends TestCase
      */
     public function testFactories()
     {
-        $this->assertCount(4, User::all());
+        $this->assertCount(5, User::all());
 
     }
 
@@ -102,7 +112,7 @@ class FiltersTest extends TestCase
      */
     public function testNoFiltersQuery(){
         $users = User::filterAndGet();
-        $this->assertCount(4, $users);
+        $this->assertCount(User::count(), $users);
     }
 
     /**
@@ -151,7 +161,7 @@ class FiltersTest extends TestCase
             "personal_info@country_id" => [1, 2]
         ]);
 
-        $this->assertCount(4, $users);
+        $this->assertCount(User::count(), $users);
     }
 
     /**
@@ -211,6 +221,20 @@ class FiltersTest extends TestCase
         $response = $user->posts()->filterAndGet(["title" => "TestTitle"]);
 
         $this->assertCount(1, $response);
+
+    }
+
+    /**
+     * Test the functionality to filter models based on the count of related models
+     */
+    public function testFilterBasedOnModelCount(){
+
+        $users = User::filterAndGet([
+            "posts@model_count" => 2
+        ]);
+
+        $this->assertCount(1, $users);
+
 
     }
 
