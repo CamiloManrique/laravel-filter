@@ -14,159 +14,6 @@ trait Filterable{
 //        return !is_null($request->input($keyword)) ? explode(",", $request->input($keyword)) : null;
 //    }
 
-    /**
-     *
-     * Get a two value array containing the sorting column and the direction
-     *
-     * @param Collection $params
-     * @return array
-     *
-     */
-    private static function _getSorting(Collection $params){
-        $keyword = config("filter.keywords.sorting");
-        return $params->has($keyword) ? explode("/", $params->get($keyword)) : null;
-    }
-
-    /**
-     *
-     * Get an array containing only the relationships
-     *
-     * @param Collection $params
-     * @return array
-     *
-     */
-    private static function _getRelationships(Collection $params){
-        $keyword = config("filter.keywords.relationships");
-        return $params->has($keyword) ? explode(",", $params->get($keyword)) : [];
-    }
-
-    /**
-     *
-     * Get an array containing only the column filters
-     *
-     * @param Collection $params
-     * @return array
-     *
-     */
-    private static function _getFilters(Collection $params){
-        $keywords = config("filter.keywords") + config("filter.aditional_keywords");
-        return $params->filter(function ($value, $key) use ($keywords){
-            return !in_array($key, $keywords);
-        })->all();
-    }
-
-    /**
-     *
-     * Process a filter and append it to the query
-     *
-     * @param Builder $query
-     * @return Builder
-     *
-     */
-    private static function _processFilter($query, $column_unparsed, $value, $relationship=null){
-        $parsed = preg_split("/".config("filter.column_query_modificator")."/", $column_unparsed);
-
-        $column = $parsed[0];
-
-        if($column === config("filter.keywords.model_count")){
-
-            $fk = $query->getRelation("posts");
-            $fk = $fk->getForeignKeyName();
-
-            return $query->whereHas($relationship, function($q) use ($value, $fk){
-                $q->groupBy($fk)->havingRaw('COUNT(*) = ?', [$value]);
-            });
-
-        }
-
-        if(count($parsed) == 2){
-            $modificator = $parsed[1];
-            switch($modificator){
-                case "start":
-                    $args = [$column, ">=", $value];
-                    break;
-                case "end":
-                    $args = [$column, "<=", $value];
-                    break;
-                case "like":
-                    $args = [$column, "LIKE", "%$value%"];
-                    break;
-                case "not":
-                    $args = [$column, "!=", "$value"];
-                    break;
-                default:
-                    $args = [$column, $value];
-                    break;
-            }
-        }
-        else{
-            $args = [$column, $value];
-        }
-
-        if(!is_null($relationship)){
-            return $query->whereHas($relationship, function($q) use($args, $value){
-                if(is_array($value)){
-                    $q->whereIn(...$args);
-                }
-                else{
-                    $q->where(...$args);
-                }
-            });
-        }
-        else{
-            if(is_array($value)){
-                return $query->whereIn(...$args);
-
-            }
-            else{
-                return $query->where(...$args);
-            }
-
-        }
-    }
-
-    private static function _addFilters($query, $filters){
-        $relationships = [];
-        foreach($filters as $key => $value){
-
-            $filter_attr = preg_split("/".config("filter.relationship_separator")."/", $key);
-
-            if(count($filter_attr) == 2){
-                $relationship = $filter_attr[0];
-                $column_unparsed = $filter_attr[1];
-                if(!in_array($relationship, $relationships)){
-                    array_push($relationships, $relationship);
-                }
-                $query = self::_processFilter($query, $column_unparsed, $value, $relationship);
-            }
-            else{
-                $column_unparsed = $filter_attr[0];
-                $query = self::_processFilter($query, $column_unparsed, $value);
-            }
-
-        }
-        if(count($relationships) > 0){
-            $query = $query->with($relationships);
-        }
-
-        return $query;
-
-    }
-
-    private static function _addRelationships($query, $relationships){
-        $query = $query->with($relationships);
-        return $query;
-    }
-
-    private static function _sortResult($query, $sorting){
-
-        if(is_null($sorting)){
-            return $query;
-        }
-        else{
-            return $query->orderBy($sorting[0], $sorting[1]);
-        }
-    }
 
 //    private static function addFields($query, $fields){
 //
@@ -251,15 +98,19 @@ trait Filterable{
         $input = self::_normalizeArguments($input);
 
         //$fields = self::getRequestFields($request);
-        $filters = self::_getFilters($input);
-        $relationships = self::_getRelationships($input);
-        $sorting = self::_getSorting($input);
+        $filters = Filters::getFilters($input);
+        $relationships = Relationships::getRelationships($input);
+        $sorting = Sorting::getSorting($input);
 
 
         $query = $builder;
-        $query = self::_addRelationships($query, $relationships);
-        $query = self::_addFilters($query, $filters);
-        $query = self::_sortResult($query, $sorting);
+        $query = Relationships::addRelationships($query, $relationships);
+        $query = Filters::addFilters($query, $filters);
+
+        if(!is_null($sorting)){
+            $query = Sorting::sortResult($query, $sorting);
+        }
+
 
         return $query;
 
