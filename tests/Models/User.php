@@ -35,7 +35,7 @@ class User extends Model
     }
 
     public function comments(){
-        return $this->hasMany(Comment::class);
+        return $this->hasManyThrough(Comment::class, Post::class);
     }
 
 }

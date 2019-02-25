@@ -15,13 +15,13 @@ return [
         "relationships" => "relationships",
         "fields" => "fields",
         "sum" => "sum",
-        "model_count" => "model_count"
+        "model_count" => "model_count",
     ],
 
-    "relationship_separator" => "@",
-    "column_query_modificator" => "\/",
-    "paginate_by_default" => true,
-    "page_size" => 100,
+    "separators" => [
+        "relationship" => "@",
+        "query_modifier" => "/",
+    ],
 
     "aditional_keywords" => [
         "page"

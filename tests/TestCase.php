@@ -22,9 +22,6 @@ abstract class TestCase extends BaseTestCase
         $app['config']->set('database.connections.filter-test', [
             'driver'   => 'sqlite',
             'database' => ':memory:',
-//            'host' => 'localhost',
-//            'username' => 'root',
-//            'password' => 'c31353135',
             'prefix'   => '',
         ]);
 

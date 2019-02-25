@@ -1,6 +1,6 @@
 <?php
 
-namespace CamiloManrique\LaravelFilter;
+namespace CamiloManrique\LaravelFilter\QueryBuilder;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;

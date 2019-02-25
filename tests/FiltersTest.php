@@ -2,97 +2,46 @@
 
 namespace CamiloManrique\LaravelFilter\Tests;
 
+use CamiloManrique\LaravelFilter\Exceptions\InvalidArgumentException;
+use CamiloManrique\LaravelFilter\Exceptions\UnknownColumnException;
 use CamiloManrique\LaravelFilter\Tests\Models\Comment;
 use CamiloManrique\LaravelFilter\Tests\Models\Country;
 use CamiloManrique\LaravelFilter\Tests\Models\PersonalInfo;
 use CamiloManrique\LaravelFilter\Tests\Models\Post;
 use CamiloManrique\LaravelFilter\Tests\Models\User;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class FiltersTest extends TestCase
 {
 
+    protected $country1;
+    protected $country2;
+
     protected function setUp(){
         parent::setUp();
 
-        factory(Country::class)->create([
+        $this->country1 = factory(Country::class)->create([
             "country" => "United States"
         ]);
-        factory(Country::class)->create([
+
+        $this->country2 = factory(Country::class)->create([
             "country" => "Canada"
         ]);
+    }
 
-        $users = collect();
-
-        $user1 = factory(User::class)->create([
-            "email" => "user1@example.com"
-        ]);
-        $user1->personal_info()->save(factory(PersonalInfo::class)->make([
-            "name" => "John Mayers",
-            "country_id" => 1
-        ]));
-
-        $users->push($user1);
-
-        $user2 = factory(User::class)->create([
-            "email" => "user2@example.com"
-        ]);
-        $user2->personal_info()->save(factory(PersonalInfo::class)->make([
-            "name" => "John Connor",
-            "country_id" => 1
-        ]));
-
-        $users->push($user2);
-
-        $user3 = factory(User::class)->create([
-            "email" => "user3@example.com"
-        ]);
-        $user3->personal_info()->save(factory(PersonalInfo::class)->make([
-            "name" => "Maya Sanders",
-            "country_id" => 1
-        ]));
-
-        $user4 = factory(User::class)->create([
-            "email" => "user4@example.com"
-        ]);
-
-        $user4->personal_info()->save(factory(PersonalInfo::class)->make([
-            "name" => "Sarah Wilson",
-            "country_id" => 2
-        ]));
-
-        $users->push($user3);
-
-        $users->each(function ($u){
-            $u->posts()->saveMany(factory(Post::class)->times(3)->make());
-            $u->comments()->saveMany(factory(Comment::class)->times(3)->make([
-                "post_id" => 1,
-                "votes" => 1,
-                "shares" => 2
-            ]));
+    private function createUserWithRelatedModels($number_of_posts = 1, $number_of_comments_per_post = 1, $attributes = [], $personal_info = []){
+        $personal_info["country_id"] = $personal_info["country_id"] ?? $this->country1->id;
+        $user = factory(User::class)->create($attributes);
+        $user->personal_info()->save(factory(PersonalInfo::class)->make($personal_info));
+        $user->posts()->saveMany(factory(Post::class, $number_of_posts)->make());
+        $user->posts->each(function ($post) use ($number_of_comments_per_post){
+            $post->comments()->saveMany(factory(Comment::class, $number_of_comments_per_post)->make());
         });
-
-        $user5 = factory(User::class)->create([
-            "email" => "user5@example.com"
-        ]);
-
-        $user5->personal_info()->save(factory(PersonalInfo::class)->make([
-            "name" => "Caroline Cooper",
-            "country_id" => 2
-        ]));
-        $user5->posts()->saveMany(factory(Post::class)->times(2)->make());
+        return $user;
 
     }
 
-    /**
-     * Test factories.
-     *
-     * @return void
-     */
-    public function testFactories()
-    {
-        $this->assertCount(5, User::all());
-
-    }
 
     /**
      * Assert that InvalidArgument exception is raised if argument is different from Request, array or collection.
@@ -101,7 +50,7 @@ class FiltersTest extends TestCase
      */
     public function testInvalidArgument()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         User::filter("InvalidArgument");
     }
 
@@ -111,8 +60,12 @@ class FiltersTest extends TestCase
      * @return void
      */
     public function testNoFiltersQuery(){
+        Collection::times(2, function (){
+            return $this->createUserWithRelatedModels();
+        });
+
         $users = User::filterAndGet();
-        $this->assertCount(User::count(), $users);
+        $this->assertCount(2, $users);
     }
 
     /**
@@ -121,13 +74,11 @@ class FiltersTest extends TestCase
      * @return void
      */
     public function testBasicFiltering(){
-        $users = User::filterAndGet(["email" => "user1@example.com"]);
+        $user1 = $this->createUserWithRelatedModels();
+        $this->createUserWithRelatedModels();
+
+        $users = User::filterAndGet(["email" => $user1->email]);
         $this->assertCount(1, $users);
-        $this->assertNotFalse(
-            $users->search(function ($item, $key){
-                return $item->email == 'user1@example.com';
-            })
-        );
     }
 
     /**
@@ -136,20 +87,23 @@ class FiltersTest extends TestCase
      * @return void
      */
     public function testAdvancedFiltering(){
+        $name = "John";
+        $this->createUserWithRelatedModels(3, 3, [], ["name" => $name]);
+        $this->createUserWithRelatedModels(3, 3, [], ["name" => $name]);
+        $this->createUserWithRelatedModels(3, 3, [], ["name" => "Sarah"]);
+
         $users = User::filterAndGet([
-            "personal_info@name/like" => "John",
+            "personal_info@name/like" => $name,
             "relationships" => "posts,comments"
         ]);
 
         $this->assertCount(2, $users);
-
-        $array_users = collect($users->toArray()['data']);
-
-        $this->assertTrue(
-            $array_users->every(function ($user){
-                return count($user['posts']) == 3 && count($user['comments']) == 3;
-            })
-        );
+        $items = collect($users);
+        $items->each(function ($item){
+            $post_count = $item->posts->count();
+            $comments_count = $item->comments->count();
+            $this->assertTrue($post_count === 3 && $comments_count === $post_count * 3);
+        });
     }
 
     /**
@@ -157,11 +111,13 @@ class FiltersTest extends TestCase
      * @return void
      */
     public function testArrayParameter(){
+        $this->createUserWithRelatedModels(1, 1, [], ["country_id" => $this->country1->id]);
+        $this->createUserWithRelatedModels(1, 1, [], ["country_id" => $this->country2->id]);
         $users = User::filterAndGet([
-            "personal_info@country_id" => [1, 2]
+            "personal_info@country_id" => [$this->country1->id, $this->country2->id]
         ]);
 
-        $this->assertCount(User::count(), $users);
+        $this->assertCount(2, $users);
     }
 
     /**
@@ -170,28 +126,34 @@ class FiltersTest extends TestCase
      * @return void
      */
     public function testSum(){
-        $result = Comment::filterAndGet([
-            "sum" => "votes,shares",
-            "user_id" => 1
-        ]);
+        $user = $this->createUserWithRelatedModels(1, 3);
+        $comments = $user->comments;
 
-        $this->assertNotNull($result->votes);
-        $this->assertNotNull($result->shares);
+        $result = $user->comments()->filterAndGet(["sum" => "votes,shares"]);
 
-        $this->assertEquals(3, $result->votes);
-        $this->assertEquals(6, $result->shares);
+        $this->assertEquals($comments->sum('votes'), $result->votes);
+        $this->assertEquals($comments->sum('shares'), $result->shares);
     }
 
     /**
      * Test the filter on relationship
      * @return void
      */
-    public function testRelationshipQuery(){
-        $user = User::all()->first();
+    public function testFiltersBasedOnRelationshipQuery(){
+        $user = $this->createUserWithRelatedModels();
         $user->posts()->save(new Post(["title" => "TestTitle", "content" => "TestContent"]));
 
-        $response = $user->posts()->filter(["title" => "TestTitle"])->get();
+        $response = User::filterAndGet(["posts@title" => "TestTitle"]);
+
         $this->assertCount(1, $response);
+    }
+
+    public function testChainsFilterFromQueryBuilder(){
+        $user = $this->createUserWithRelatedModels();
+
+        $response = $user->posts()->filter()->get();
+        $this->assertCount(1, $response);
+
     }
 
 
@@ -201,41 +163,48 @@ class FiltersTest extends TestCase
      * @return void
      */
     public function testPagination(){
-        $comments = Comment::filterAndGet([
-            "user_id" => 1,
-            "page_size" => 2
-        ]);
+        Collection::times(5, function (){return $this->createUserWithRelatedModels();});
+        $response = User::filterAndGet(["page_size" => 2]);
 
-        $this->assertCount(2, $comments);
-    }
-
-    /**
-     * Test that the filter methods can be chained with the Eloquent relationship methods.
-     */
-    public function testFilterFromEloquentRelationship(){
-
-        $user = User::all()->first();
-        $user->posts()->save(new Post(["title" => "TestTitle", "content" => "TestContent"]));
-
-        $user = User::find(1);
-        $response = $user->posts()->filterAndGet(["title" => "TestTitle"]);
-
-        $this->assertCount(1, $response);
-
+        $this->assertCount(2, $response);
     }
 
     /**
      * Test the functionality to filter models based on the count of related models
      */
     public function testFilterBasedOnModelCount(){
+        $this->createUserWithRelatedModels(2);
+        $this->createUserWithRelatedModels(4);
 
         $users = User::filterAndGet([
             "posts@model_count" => 2
         ]);
 
         $this->assertCount(1, $users);
+    }
 
+    public function testSortsResults(){
+        $this->createUserWithRelatedModels(1, 1, ["email" => "buser@example.com"]);
+        $this->createUserWithRelatedModels(1, 1, ["email" => "auser@example.com"]);
 
+        $users = User::filterAndGet(["sort" => "email/desc"]);
+
+        $this->assertEquals("buser@example.com", $users->get(0)->email);
+    }
+
+    public function testRaisesExceptionWhenColumnNotExists(){
+        if(!$this->isSqlite()){
+            $this->expectException(UnknownColumnException::class);
+            $this->createUserWithRelatedModels();
+            User::filterAndGet(["invalid_column" => "value", "email" => "a"]);
+        }
+        else{
+            $this->markTestSkipped("This cannot be tested with Sqlite driver");
+        }
+    }
+
+    private function isSqlite(){
+        return DB::connection()->getConfig()['driver'] === 'sqlite';
     }
 
 }

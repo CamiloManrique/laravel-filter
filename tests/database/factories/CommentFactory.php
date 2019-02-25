@@ -17,6 +17,7 @@ use CamiloManrique\LaravelFilter\Tests\Models\Comment;
 $factory->define(Comment::class, function (Faker $faker) {
     return [
         'comment' => $faker->text(),
-        'votes' => $faker->numberBetween(-10, 10)
+        'votes' => $faker->numberBetween(-10, 10),
+        'shares' => $faker->numberBetween(0, 20)
     ];
 });

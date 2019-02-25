@@ -1,7 +1,8 @@
 <?php
 
-namespace CamiloManrique\LaravelFilter;
+namespace CamiloManrique\LaravelFilter\QueryBuilder;
 
+use CamiloManrique\LaravelFilter\QueryBuilder\Exceptions\InvalidSortingFormatException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -14,10 +15,15 @@ class Sorting
      * @param Collection $params
      * @return array
      *
+     * @throws InvalidSortingFormatException
      */
     public static function getSorting(Collection $params){
         $keyword = config("filter.keywords.sorting");
-        return $params->has($keyword) ? explode("/", $params->get($keyword)) : null;
+        $sorting = $params->has($keyword) ? explode("/", $params->get($keyword)) : null;
+        if(!is_null($sorting) && count($sorting) != 2){
+            throw new InvalidSortingFormatException();
+        }
+        return $sorting;
     }
 
 
